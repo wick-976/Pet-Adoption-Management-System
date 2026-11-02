@@ -1,0 +1,1493 @@
+openapi: 3.0.1
+info:
+  title: Pet Adoption Management System API
+  description: Backend RESTful API for the Pet Adoption Management System conforming
+    to SRS specifications.
+  contact:
+    name: Pet Adoption Support
+    email: support@petadoption.org
+  license:
+    name: Apache 2.0
+    url: https://spring.io
+  version: 1.0.0
+servers:
+- url: http://localhost:8080
+  description: Generated server url
+security:
+- bearerAuth: []
+tags:
+- name: Donations
+  description: Public shelter support and donation processing endpoints
+- name: Shelter Information
+  description: Public shelter info retrieval and staff update endpoints
+- name: Adoption Requests
+  description: Adoption application submission and status management endpoints
+- name: Pet Images
+  description: Pet image management endpoints
+- name: Staff Management
+  description: Staff administrative operations
+- name: Authentication
+  description: Authentication and registration endpoints for Staff and Users
+- name: Pets
+  description: "Pet catalog, searching, filtering, and management endpoints"
+- name: Analytics & Reports
+  description: "Staff analytics, statistics, and reporting endpoints"
+- name: Favorite Pets
+  description: User favorite pets management
+paths:
+  /api/shelter:
+    get:
+      tags:
+      - Shelter Information
+      summary: "Get shelter public profile, contact details, and operating hours"
+      operationId: getShelter
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ShelterResponseDto"
+    put:
+      tags:
+      - Shelter Information
+      summary: "Update shelter profile, contact details, and operating hours"
+      operationId: updateShelter
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShelterUpdateDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ShelterResponseDto"
+  /api/pets/{petId}/images/{imageId}/primary:
+    put:
+      tags:
+      - Pet Images
+      summary: Set an image as primary for a pet
+      operationId: setPrimaryImage
+      parameters:
+      - name: petId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: imageId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PetImageResponseDto"
+  /api/pets/{id}:
+    get:
+      tags:
+      - Pets
+      summary: Get detailed public pet profile (increments view count)
+      operationId: getPetById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PetPublicResponseDto"
+    put:
+      tags:
+      - Pets
+      summary: Update pet details
+      operationId: updatePet
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PetUpdateRequestDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PetStaffResponseDto"
+    delete:
+      tags:
+      - Pets
+      summary: Delete a pet listing
+      operationId: deletePet
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+  /api/pets/{id}/status:
+    put:
+      tags:
+      - Pets
+      summary: Update pet adoption status
+      operationId: updatePetStatus
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PetStatusUpdateDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PetStaffResponseDto"
+  /api/adoption-requests/{id}/status:
+    put:
+      tags:
+      - Adoption Requests
+      summary: "Update adoption request status (APPROVED -> ADOPTED, REJECTED -> AVAILABLE\
+        \ if no other pending requests)"
+      operationId: updateRequestStatus
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdoptionStatusUpdateDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AdoptionRequestResponseDto"
+  /api/pets:
+    get:
+      tags:
+      - Pets
+      summary: Search and filter pets for public catalog
+      operationId: searchPets
+      parameters:
+      - name: name
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: breed
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: species
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: age
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      - name: adoptionStatus
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - AVAILABLE
+          - PENDING
+          - ADOPTED
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 10
+      - name: sortBy
+        in: query
+        required: false
+        schema:
+          type: string
+          default: creationDate
+      - name: sortDir
+        in: query
+        required: false
+        schema:
+          type: string
+          default: desc
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PagedModel"
+    post:
+      tags:
+      - Pets
+      summary: Create a new pet listing
+      operationId: createPet
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PetCreateRequestDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PetStaffResponseDto"
+  /api/pets/{petId}/images:
+    get:
+      tags:
+      - Pet Images
+      summary: Get all images for a pet
+      operationId: getImages
+      parameters:
+      - name: petId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PetImageResponseDto"
+    post:
+      tags:
+      - Pet Images
+      summary: Add an image to a pet
+      operationId: addImage
+      parameters:
+      - name: petId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PetImageRequestDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PetImageResponseDto"
+  /api/favorites/{petId}:
+    post:
+      tags:
+      - Favorite Pets
+      summary: Add a pet to current user's favorites
+      operationId: addFavorite
+      parameters:
+      - name: petId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/FavoritePetResponseDto"
+    delete:
+      tags:
+      - Favorite Pets
+      summary: Remove a pet from current user's favorites
+      operationId: removeFavorite
+      parameters:
+      - name: petId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+  /api/donations:
+    post:
+      tags:
+      - Donations
+      summary: Initiate a donation checkout session with third-party payment gateway
+      operationId: initiateDonation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DonationRequestDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/DonationResponseDto"
+  /api/auth/user/login:
+    post:
+      tags:
+      - Authentication
+      summary: Registered user specific login
+      operationId: loginUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequestDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AuthResponseDto"
+  /api/auth/staff/register:
+    post:
+      tags:
+      - Authentication
+      summary: Admin registers a new staff member
+      operationId: registerStaff
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StaffRegisterRequestDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/StaffResponseDto"
+  /api/auth/staff/login:
+    post:
+      tags:
+      - Authentication
+      summary: Staff / Admin specific login
+      operationId: loginStaff
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequestDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AuthResponseDto"
+  /api/auth/register:
+    post:
+      tags:
+      - Authentication
+      summary: Register a new regular user account
+      operationId: registerUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequestDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UserResponseDto"
+  /api/auth/login:
+    post:
+      tags:
+      - Authentication
+      summary: "Unified login for staff and users (tries staff first, then user)"
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequestDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AuthResponseDto"
+  /api/adoption-requests:
+    get:
+      tags:
+      - Adoption Requests
+      summary: List all adoption requests with optional status and pet filters
+      operationId: getAdoptionRequests
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - PENDING
+          - RECEIVED
+          - APPROVED
+          - REJECTED
+      - name: petId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 10
+      - name: sortBy
+        in: query
+        required: false
+        schema:
+          type: string
+          default: submissionDate
+      - name: sortDir
+        in: query
+        required: false
+        schema:
+          type: string
+          default: desc
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PagedModel"
+    post:
+      tags:
+      - Adoption Requests
+      summary: Submit an adoption request for an available pet
+      operationId: submitRequest
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdoptionRequestCreateDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AdoptionRequestResponseDto"
+  /api/staff:
+    get:
+      tags:
+      - Staff Management
+      summary: List all staff members
+      operationId: getAllStaff
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StaffResponseDto"
+  /api/staff/me:
+    get:
+      tags:
+      - Staff Management
+      summary: Get currently authenticated staff profile
+      operationId: getMyProfile
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/StaffResponseDto"
+  /api/pets/staff:
+    get:
+      tags:
+      - Pets
+      summary: Staff pet catalog including medical and administrative information
+      operationId: searchPetsStaff
+      parameters:
+      - name: name
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: breed
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: species
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: age
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      - name: adoptionStatus
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - AVAILABLE
+          - PENDING
+          - ADOPTED
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 10
+      - name: sortBy
+        in: query
+        required: false
+        schema:
+          type: string
+          default: creationDate
+      - name: sortDir
+        in: query
+        required: false
+        schema:
+          type: string
+          default: desc
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PagedModel"
+  /api/pets/staff/{id}:
+    get:
+      tags:
+      - Pets
+      summary: Get detailed pet profile with medical records for staff
+      operationId: getPetStaffById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PetStaffResponseDto"
+  /api/pets/most-viewed:
+    get:
+      tags:
+      - Pets
+      summary: Get most viewed pet profiles
+      operationId: getMostViewedPets
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 5
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PetPublicResponseDto"
+  /api/favorites:
+    get:
+      tags:
+      - Favorite Pets
+      summary: Get list of favorited pets for current user
+      operationId: getFavorites
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FavoritePetResponseDto"
+  /api/favorites/check/{petId}:
+    get:
+      tags:
+      - Favorite Pets
+      summary: Check if a pet is in current user's favorites
+      operationId: checkFavorite
+      parameters:
+      - name: petId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseBoolean"
+  /api/donations/{id}:
+    get:
+      tags:
+      - Donations
+      summary: Check status of a donation by ID
+      operationId: getDonationStatus
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/DonationResponseDto"
+  /api/analytics:
+    get:
+      tags:
+      - Analytics & Reports
+      summary: Get overall shelter analytics and metrics
+      operationId: getOverallAnalytics
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AnalyticsResponseDto"
+  /api/analytics/pets:
+    get:
+      tags:
+      - Analytics & Reports
+      summary: Get detailed pet analytics and species breakdown
+      operationId: getPetAnalytics
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PetAnalyticsDto"
+  /api/analytics/export:
+    get:
+      tags:
+      - Analytics & Reports
+      summary: Get export-ready analytics data
+      operationId: getExportData
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+  /api/analytics/adoptions:
+    get:
+      tags:
+      - Analytics & Reports
+      summary: Get adoption statistics for a selected period
+      operationId: getAdoptionAnalytics
+      parameters:
+      - name: startDate
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: endDate
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AdoptionAnalyticsDto"
+  /api/adoption-requests/{id}:
+    get:
+      tags:
+      - Adoption Requests
+      summary: Get adoption request details by ID
+      operationId: getAdoptionRequestById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AdoptionRequestResponseDto"
+  /api/adoption-requests/my-requests:
+    get:
+      tags:
+      - Adoption Requests
+      summary: Get adoption requests submitted by the currently logged-in user
+      operationId: getMyRequests
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdoptionRequestResponseDto"
+  /api/pets/images/{imageId}:
+    delete:
+      tags:
+      - Pet Images
+      summary: Delete a pet image
+      operationId: deleteImage
+      parameters:
+      - name: imageId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+components:
+  schemas:
+    ShelterUpdateDto:
+      required:
+      - address
+      - email
+      - name
+      - phone
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        operatingHours:
+          type: string
+        description:
+          type: string
+        website:
+          type: string
+    ShelterResponseDto:
+      type: object
+      properties:
+        shelterId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        address:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        operatingHours:
+          type: string
+        description:
+          type: string
+        website:
+          type: string
+        lastUpdatedDate:
+          type: string
+          format: date-time
+    PetImageResponseDto:
+      type: object
+      properties:
+        imageId:
+          type: integer
+          format: int64
+        petId:
+          type: integer
+          format: int64
+        imageUrl:
+          type: string
+        isPrimary:
+          type: boolean
+        uploadedAt:
+          type: string
+          format: date-time
+    PetUpdateRequestDto:
+      required:
+      - age
+      - name
+      - species
+      type: object
+      properties:
+        name:
+          maxLength: 100
+          minLength: 0
+          type: string
+        species:
+          maxLength: 50
+          minLength: 0
+          type: string
+        breed:
+          maxLength: 100
+          minLength: 0
+          type: string
+        age:
+          maximum: 50
+          minimum: 0
+          type: integer
+          format: int32
+        description:
+          type: string
+        adoptionStatus:
+          type: string
+          enum:
+          - AVAILABLE
+          - PENDING
+          - ADOPTED
+        vaccinationStatus:
+          type: string
+        spayNeuterStatus:
+          type: string
+        specialMedicalNeeds:
+          type: string
+    PetStaffResponseDto:
+      type: object
+      properties:
+        petId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        species:
+          type: string
+        breed:
+          type: string
+        age:
+          type: integer
+          format: int32
+        description:
+          type: string
+        adoptionStatus:
+          type: string
+          enum:
+          - AVAILABLE
+          - PENDING
+          - ADOPTED
+        viewCount:
+          type: integer
+          format: int64
+        vaccinationStatus:
+          type: string
+        spayNeuterStatus:
+          type: string
+        specialMedicalNeeds:
+          type: string
+        creationDate:
+          type: string
+          format: date-time
+        lastUpdatedDate:
+          type: string
+          format: date-time
+        primaryImageUrl:
+          type: string
+        images:
+          type: array
+          items:
+            $ref: "#/components/schemas/PetImageResponseDto"
+    PetStatusUpdateDto:
+      required:
+      - adoptionStatus
+      type: object
+      properties:
+        adoptionStatus:
+          type: string
+          enum:
+          - AVAILABLE
+          - PENDING
+          - ADOPTED
+    AdoptionStatusUpdateDto:
+      required:
+      - status
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - PENDING
+          - RECEIVED
+          - APPROVED
+          - REJECTED
+        staffNotes:
+          type: string
+    AdoptionRequestResponseDto:
+      type: object
+      properties:
+        requestId:
+          type: integer
+          format: int64
+        petId:
+          type: integer
+          format: int64
+        petName:
+          type: string
+        petSpecies:
+          type: string
+        userId:
+          type: integer
+          format: int64
+        applicantName:
+          type: string
+        applicantEmail:
+          type: string
+        applicantPhone:
+          type: string
+        applicantAddress:
+          type: string
+        housingType:
+          type: string
+        hasOtherPets:
+          type: boolean
+        reasonForAdoption:
+          type: string
+        status:
+          type: string
+          enum:
+          - PENDING
+          - RECEIVED
+          - APPROVED
+          - REJECTED
+        submissionDate:
+          type: string
+          format: date-time
+        reviewedDate:
+          type: string
+          format: date-time
+        staffNotes:
+          type: string
+    PetCreateRequestDto:
+      required:
+      - age
+      - name
+      - species
+      type: object
+      properties:
+        name:
+          maxLength: 100
+          minLength: 0
+          type: string
+        species:
+          maxLength: 50
+          minLength: 0
+          type: string
+        breed:
+          maxLength: 100
+          minLength: 0
+          type: string
+        age:
+          maximum: 50
+          minimum: 0
+          type: integer
+          format: int32
+        description:
+          type: string
+        vaccinationStatus:
+          type: string
+        spayNeuterStatus:
+          type: string
+        specialMedicalNeeds:
+          type: string
+        initialImageUrl:
+          type: string
+    PetImageRequestDto:
+      required:
+      - imageUrl
+      type: object
+      properties:
+        imageUrl:
+          type: string
+        isPrimary:
+          type: boolean
+    FavoritePetResponseDto:
+      type: object
+      properties:
+        favoriteId:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        pet:
+          $ref: "#/components/schemas/PetPublicResponseDto"
+        favoritedAt:
+          type: string
+          format: date-time
+    PetPublicResponseDto:
+      type: object
+      properties:
+        petId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        species:
+          type: string
+        breed:
+          type: string
+        age:
+          type: integer
+          format: int32
+        description:
+          type: string
+        adoptionStatus:
+          type: string
+          enum:
+          - AVAILABLE
+          - PENDING
+          - ADOPTED
+        primaryImageUrl:
+          type: string
+        images:
+          type: array
+          items:
+            $ref: "#/components/schemas/PetImageResponseDto"
+        viewCount:
+          type: integer
+          format: int64
+    DonationRequestDto:
+      required:
+      - amount
+      - donorEmail
+      - donorName
+      type: object
+      properties:
+        donorName:
+          type: string
+        donorEmail:
+          type: string
+        amount:
+          minimum: 1.00
+          exclusiveMinimum: false
+          type: number
+        currency:
+          type: string
+        message:
+          type: string
+    DonationResponseDto:
+      type: object
+      properties:
+        donationId:
+          type: integer
+          format: int64
+        donorName:
+          type: string
+        donorEmail:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+        status:
+          type: string
+        paymentSessionId:
+          type: string
+        checkoutUrl:
+          type: string
+        message:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    LoginRequestDto:
+      required:
+      - password
+      - username
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+    AuthResponseDto:
+      type: object
+      properties:
+        token:
+          type: string
+        tokenType:
+          type: string
+        id:
+          type: integer
+          format: int64
+        username:
+          type: string
+        role:
+          type: string
+        expiresIn:
+          type: integer
+          format: int64
+    StaffRegisterRequestDto:
+      required:
+      - email
+      - password
+      - username
+      type: object
+      properties:
+        username:
+          maxLength: 50
+          minLength: 3
+          type: string
+        email:
+          type: string
+        password:
+          maxLength: 2147483647
+          minLength: 6
+          type: string
+        role:
+          type: string
+          enum:
+          - ROLE_ADMIN
+          - ROLE_STAFF
+          - ROLE_USER
+    StaffResponseDto:
+      type: object
+      properties:
+        staffId:
+          type: integer
+          format: int64
+        username:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+        lastLoginDate:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    RegisterRequestDto:
+      required:
+      - email
+      - password
+      - username
+      type: object
+      properties:
+        username:
+          maxLength: 50
+          minLength: 3
+          type: string
+        email:
+          type: string
+        password:
+          maxLength: 2147483647
+          minLength: 6
+          type: string
+    UserResponseDto:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+        username:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    AdoptionRequestCreateDto:
+      required:
+      - applicantEmail
+      - applicantName
+      - applicantPhone
+      - petId
+      type: object
+      properties:
+        petId:
+          type: integer
+          format: int64
+        applicantName:
+          type: string
+        applicantEmail:
+          type: string
+        applicantPhone:
+          pattern: "^[+0-9\\-\\s()]{7,20}$"
+          type: string
+        applicantAddress:
+          type: string
+        housingType:
+          type: string
+        hasOtherPets:
+          type: boolean
+        reasonForAdoption:
+          type: string
+    PageMetadata:
+      type: object
+      properties:
+        size:
+          type: integer
+          format: int64
+        number:
+          type: integer
+          format: int64
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int64
+    PagedModel:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            type: object
+        page:
+          $ref: "#/components/schemas/PageMetadata"
+    ApiResponseBoolean:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: boolean
+        timestamp:
+          type: string
+          format: date-time
+    AnalyticsResponseDto:
+      type: object
+      properties:
+        totalAvailablePets:
+          type: integer
+          format: int64
+        totalAdoptionRequests:
+          type: integer
+          format: int64
+        adoptionStatusBreakdown:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64
+        completedAdoptions:
+          type: integer
+          format: int64
+        petsBySpecies:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64
+        mostViewedPets:
+          type: array
+          items:
+            $ref: "#/components/schemas/PetPublicResponseDto"
+    PetAnalyticsDto:
+      type: object
+      properties:
+        totalPets:
+          type: integer
+          format: int64
+        availablePets:
+          type: integer
+          format: int64
+        pendingPets:
+          type: integer
+          format: int64
+        adoptedPets:
+          type: integer
+          format: int64
+        speciesBreakdown:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64
+        mostViewedPets:
+          type: array
+          items:
+            $ref: "#/components/schemas/PetPublicResponseDto"
+    AdoptionAnalyticsDto:
+      type: object
+      properties:
+        totalRequests:
+          type: integer
+          format: int64
+        approvedRequests:
+          type: integer
+          format: int64
+        rejectedRequests:
+          type: integer
+          format: int64
+        pendingRequests:
+          type: integer
+          format: int64
+        approvalRatePercentage:
+          type: number
+          format: double
+        periodStart:
+          type: string
+          format: date-time
+        periodEnd:
+          type: string
+          format: date-time
+    ApiResponseVoid:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+  securitySchemes:
+    bearerAuth:
+      type: http
+      name: bearerAuth
+      scheme: bearer
+      bearerFormat: JWT
